@@ -47,6 +47,18 @@ private slots:
 
     void on_pushButton_13_clicked();
 
+    void on_pushButton_16_clicked();
+
+    void on_pushButton_15_clicked();
+
+    void on_pushButton_14_clicked();
+
+    void on_lineEdit_6_textChanged(const QString &arg1);
+
+    void on_lineEdit_7_textChanged(const QString &arg1);
+
+    void on_pushButton_17_clicked();
+
 private:
     Ui::MainWindow *ui;
 };

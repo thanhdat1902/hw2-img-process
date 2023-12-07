@@ -7,6 +7,7 @@
 #include <QVector>
 #include <QQueue>
 #include <iostream>
+#include <utility>
 
 using namespace std;
 MainWindow::MainWindow(QWidget *parent)
@@ -17,6 +18,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui->lineEdit_3->setText("3");
     ui->lineEdit_4->setText("3");
     ui->lineEdit_5->setText("1");
+    ui->lineEdit_6->setText("3");
+    ui->lineEdit_7->setText("3");
+
+    ui->lineEdit_Q->setText("1");
+
+    ui->lineEdit_d->setText("2");
+
 }
 
 MainWindow::~MainWindow()
@@ -29,7 +37,7 @@ QVector<QVector<int>> imgArray;
 
 void MainWindow::on_pushButton_clicked()
 {
-    QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), QDir::homePath(), tr("Images (*.png *.xpm *.jpg *.ppm)"));
+    QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), QDir::homePath(), tr("Images (*.png *.xpm *.jpg *.ppm *.tif)"));
     if (!file_name.isEmpty()){
 
         //open prompt and display image
@@ -45,14 +53,9 @@ void MainWindow::on_pushButton_clicked()
         ui->lineEdit->setText(QString::number(w));
         ui->lineEdit_2->setText(QString::number(h));
 
-        //get image width and height, create empty binary matrix
-        unsigned int cols = img.width();
-        unsigned int rows = img.height();
-        unsigned int numBlackPixels = 0;
-
-        for (unsigned int i = 0; i < rows; i++){
+        for (unsigned int i = 0; i < w; i++){
             imgArray.push_back(QVector<int>());
-            for (unsigned int j = 0; j < cols; j++){
+            for (unsigned int j = 0; j < h; j++){
                 QColor clrCurrent( imgGray.pixel( i, j ));
                 int r = (clrCurrent.red() + clrCurrent.green() + clrCurrent.blue()) / 3;
                 imgArray[i].push_back(r);
@@ -862,4 +865,429 @@ void MainWindow::on_lineEdit_4_textEdited(const QString &arg1)
 
 
 
+
+// -------------------------------------------------------------------- Assignment 3 ---------------------------------------------------------
+
+QVector<QVector<int>> contraharmonicFilter2dArrayImage(const QVector<QVector<int>>& image, int filterRows, int filterColumns, int Q) {
+
+    int padding = filterRows/2;
+    QVector<QVector<int>> imgPad = addDuplicatePadding(image, padding);
+
+
+    QVector<QVector<int>> output;
+    // Iterate over the pixels of the input image.
+    for (int a = 0; a < image.length(); a++) {
+        output.push_back(QVector<int>());
+        for (int b = 0; b < image[0].length(); b++) {
+            // Looping for the entire window size
+            double filteredPixelValue1 = 0;
+            double filteredPixelValue2 = 0;
+
+            for (int c = 0; c < filterRows; c++) {
+                for (int d = 0; d < filterColumns; d++) {
+                    // Get the pixel value in the current pixel position
+                    filteredPixelValue1 += (double)pow(imgPad[a+c][b+d], Q);
+                    filteredPixelValue2 += (double)pow(imgPad[a+c][b+d], Q+1);
+                }
+            }
+            output[a].push_back((int)filteredPixelValue2/filteredPixelValue1);
+        }
+    }
+    return output;
+}
+
+
+QVector<QVector<int>> geometricFilter2dArrayImage(const QVector<QVector<int>>& image, int filterRows, int filterColumns) {
+
+    int padding = filterRows/2;
+    QVector<QVector<int>> imgPad = addDuplicatePadding(image, padding);
+
+
+    QVector<QVector<int>> output;
+    // Iterate over the pixels of the input image.
+    for (int a = 0; a < image.length(); a++) {
+        output.push_back(QVector<int>());
+        for (int b = 0; b < image[0].length(); b++) {
+            // Looping for the entire window size
+            double filteredPixelValue = 0;
+
+            for (int c = 0; c < filterRows; c++) {
+                for (int d = 0; d < filterColumns; d++) {
+                    // Get the pixel value in the current pixel position
+                    filteredPixelValue += log(imgPad[a+c][b+d]);
+                }
+            }
+            output[a].push_back(exp(filteredPixelValue/ (filterRows*filterColumns)));
+        }
+    }
+    return output;
+}
+
+QVector<QVector<int>> maxFilter2dArrayImage(const QVector<QVector<int>>& image, int filterRows, int filterColumns) {
+
+    int padding = filterRows/2;
+    QVector<QVector<int>> imgPad = addDuplicatePadding(image, padding);
+
+
+    QVector<QVector<int>> output;
+    // Iterate over the pixels of the input image.
+    for (int a = 0; a < image.length(); a++) {
+        output.push_back(QVector<int>());
+        for (int b = 0; b < image[0].length(); b++) {
+            // Looping for the entire window size
+            int maxx = 0;
+
+            for (int c = 0; c < filterRows; c++) {
+                for (int d = 0; d < filterColumns; d++) {
+                    // Get the pixel value in the current pixel position
+                    if(imgPad[a+c][b+d] >= maxx) {
+                        maxx = imgPad[a+c][b+d];
+                    }
+                }
+            }
+            output[a].push_back(maxx);
+        }
+    }
+    return output;
+}
+
+QVector<QVector<int>> minFilter2dArrayImage(const QVector<QVector<int>>& image, int filterRows, int filterColumns) {
+
+    int padding = filterRows/2;
+    QVector<QVector<int>> imgPad = addDuplicatePadding(image, padding);
+
+
+    QVector<QVector<int>> output;
+    // Iterate over the pixels of the input image.
+    for (int a = 0; a < image.length(); a++) {
+        output.push_back(QVector<int>());
+        for (int b = 0; b < image[0].length(); b++) {
+            // Looping for the entire window size
+            int minn = 256;
+
+            for (int c = 0; c < filterRows; c++) {
+                for (int d = 0; d < filterColumns; d++) {
+                    // Get the pixel value in the current pixel position
+                    if(imgPad[a+c][b+d] <= minn) {
+                        minn = imgPad[a+c][b+d];
+                    }
+                }
+            }
+            output[a].push_back(minn);
+        }
+    }
+    return output;
+}
+
+QVector<QVector<int>> midPointFilter2dArrayImage(const QVector<QVector<int>>& image, int filterRows, int filterColumns) {
+
+    int padding = filterRows/2;
+    QVector<QVector<int>> imgPad = addDuplicatePadding(image, padding);
+
+
+    QVector<QVector<int>> output;
+    // Iterate over the pixels of the input image.
+    for (int a = 0; a < image.length(); a++) {
+        output.push_back(QVector<int>());
+        for (int b = 0; b < image[0].length(); b++) {
+            // Looping for the entire window size
+            int maxx = 0;
+            int minn = 256;
+
+            for (int c = 0; c < filterRows; c++) {
+                for (int d = 0; d < filterColumns; d++) {
+                    // Get the pixel value in the current pixel position
+                    if(imgPad[a+c][b+d] >= maxx) {
+                        maxx = imgPad[a+c][b+d];
+                    }
+                    if(imgPad[a+c][b+d] <= minn) {
+                        minn = imgPad[a+c][b+d];
+                    }
+                }
+            }
+            output[a].push_back((int) (0.5 * (maxx + minn)));
+        }
+    }
+    return output;
+}
+
+QVector<QVector<int>> alphaTrimmedFilter2dArrayImage(const QVector<QVector<int>>& image, int filterRows, int filterColumns, int d) {
+
+    int padding = filterRows/2;
+    QVector<QVector<int>> imgPad = addDuplicatePadding(image, padding);
+
+
+    QVector<QVector<int>> output;
+    // Iterate over the pixels of the input image.
+    for (int a = 0; a < image.length(); a++) {
+        output.push_back(QVector<int>());
+        for (int b = 0; b < image[0].length(); b++) {
+            // Looping for the entire window size
+            QVector<int> tmp;
+            for (int c = 0; c < filterRows; c++) {
+                for (int d = 0; d < filterColumns; d++) {
+                    tmp.push_back( imgPad[a+c][b+d]);
+                }
+            }
+            sort(tmp.begin(), tmp.end());
+            int total = 0;
+            for (int i = 0; i < tmp.size(); i++) {
+                if(i > d/2 && i < tmp.size() - 1 - d/2) {
+                    total += tmp[i];
+                }
+            }
+            output[a].push_back((int) total/(filterRows*filterColumns - d));
+            tmp.clear();
+        }
+    }
+    return output;
+}
+void MainWindow::on_pushButton_16_clicked()
+{
+    ui->label_error->setText("");
+
+    QRadioButton *r1 = ui->radioButton_9;
+    QRadioButton *r2 = ui->radioButton_10;
+    QRadioButton *r3 = ui->radioButton_11;
+    QRadioButton *r4 = ui->radioButton_12;
+    QRadioButton *r5 = ui->radioButton_13;
+    QRadioButton *r6 = ui->radioButton_14;
+    QRadioButton *r7 = ui->radioButton_15;
+    QRadioButton *r8 = ui->radioButton_16;
+
+
+    int filterW = ui->lineEdit_6->text().toInt();
+    int filterH = ui->lineEdit_7->text().toInt();
+
+    QVector<QVector<int>> newImg;
+    ui->label_error->setText("Generating...");
+
+    if(r1->isChecked()) {
+        newImg = contraharmonicFilter2dArrayImage(imgArray, filterW, filterH, 0);
+    } else if(r2->isChecked()) {
+        newImg = geometricFilter2dArrayImage(imgArray, filterW, filterH);
+    } else if(r3->isChecked()) {
+        newImg = contraharmonicFilter2dArrayImage(imgArray, filterW, filterH, -1);
+
+    } else if(r4->isChecked()) {
+        int Q = ui->lineEdit_Q->text().toInt();
+        newImg = contraharmonicFilter2dArrayImage(imgArray, filterW, filterH, Q);
+
+    }else if(r5->isChecked()) {
+        newImg = maxFilter2dArrayImage(imgArray, filterW, filterH);
+    }else if(r6->isChecked()) {
+        newImg = minFilter2dArrayImage(imgArray, filterW, filterH);
+    }else if(r7->isChecked()) {
+        newImg = midPointFilter2dArrayImage(imgArray, filterW, filterH);
+    }else if(r8->isChecked()) {
+        int d = ui->lineEdit_d->text().toInt();
+        newImg = alphaTrimmedFilter2dArrayImage(imgArray, filterW, filterH, d);
+    }
+
+    ui->label_error->setText("");
+
+    QPixmap result;
+    grayscaleToQPixmap(newImg , result);
+    ui->label_pic_2->setPixmap(result);
+    if(newImg.size() < 100 && newImg[0].size() < 100) {
+        ui->label_pic_3->setPixmap(result.scaled(ui->label_pic_3->width(),ui->label_pic_3->height()));
+    }
+
+    ui->label_pic->adjustSize();
+
+
+    // Showing new size
+    ui->label_new_w->setText(QString::number(newImg.size()));
+    ui->label_new_h->setText(QString::number(newImg[0].size()));
+
+    // Reset stage
+    for(int i=0 ; i< newImg.size(); i++) {
+        for(int j=0 ; j< newImg[i].size(); j++) {
+            newImg[i].pop_back();
+        }
+        newImg.pop_front();
+    }
+    //    QString fileSave = "/Users/datnguyen/Downloads/ImgResult/Task1/result" + QString::number(rand() % 1000)+".png";
+    //    result.save(fileSave, "PNG");
+}
+
+
+
+
+
+
+// Change filter size
+void MainWindow::on_pushButton_15_clicked()
+{
+    int w = ui->lineEdit_6->text().toInt();
+    int h = ui->lineEdit_7->text().toInt();
+    if(w-2 != 0 && h-2 != 0) {
+        ui->lineEdit_6->setText(QString::number(w-2));
+        ui->lineEdit_7->setText(QString::number(h-2));
+    } else {
+        ui->label_error->setText("Cannot make smaller. Please try another dimensions");
+    }
+}
+void MainWindow::on_pushButton_14_clicked()
+{
+    int w = ui->lineEdit_6->text().toInt();
+    int h = ui->lineEdit_7->text().toInt();
+    ui->lineEdit_6->setText(QString::number(w+2));
+    ui->lineEdit_7->setText(QString::number(h+2));
+}
+
+
+void MainWindow::on_lineEdit_6_textChanged(const QString &arg1)
+{
+    ui->lineEdit_7->setText(arg1);
+}
+
+
+void MainWindow::on_lineEdit_7_textChanged(const QString &arg1)
+{
+    ui->lineEdit_6->setText(arg1);
+}
+
+
+// -------------------------------------------------------------------- Assignment 4 ---------------------------------------------------------
+
+QVector<QVector<QPair<int, int>>> RLEncode(const QVector<QVector<int>>& image) {
+    int height = image.length();
+    int width = image[0].length();
+
+    // Create a vector to store the encoded image
+    QVector<QVector<QPair<int, int>>> encodedImage;
+
+    // Iterate over the image
+    for (int i = 0; i < height; i++) {
+        // Get the current pixel value
+        int currentPixel = image[i][0];
+
+        // Initialize the run length
+        int runLength = 1;
+
+        // Iterate over the remaining pixels in the row
+        for (int j = 1; j < width; j++) {
+            // If the current pixel value is the same as the previous pixel value, increment the run length
+            if (currentPixel == image[i][j]) {
+                runLength++;
+            } else {
+                // Otherwise, encode the run length and reset it
+                encodedImage[i].push_back(qMakePair(currentPixel, runLength));
+                currentPixel = image[i][j];
+                runLength = 1;
+            }
+        }
+        // Encode the last run length
+        encodedImage[i].push_back(qMakePair(currentPixel, runLength));
+    }
+
+    return encodedImage;
+}
+
+QVector<QVector<int>> RLDecode(const QVector<QVector<QPair<int, int>>> encodedImage) {
+    // Get the dimensions of the encoded image
+    int height = encodedImage.length();
+
+    // Create a vector to store the decoded image
+    QVector<QVector<int>> decodedImage;
+
+    // Iterate over the encoded image
+    for (int i = 0; i < height; i++) {
+        decodedImage.push_back(QVector<int>());
+
+        for (int j = 0; j < encodedImage[i].length(); j++) {
+            int runLength = encodedImage[i][j].second;
+
+            // Initialize the current pixel value
+            int currentPixel = encodedImage[i][j].first;
+
+            // Iterate over the remaining pixels in the row
+            for (int j = 0; j < runLength; j++) {
+                // Decode the run length and reset it
+                decodedImage[i].push_back(currentPixel);
+                runLength--;
+            }
+
+        }
+    }
+
+    return decodedImage;
+}
+
+QVector<QVector<int>> runLengthCodingOnGrayscale(const QVector<QVector<int>>& image) {
+    QVector<QVector<QPair<int, int>>> encodedImage = RLEncode(image);
+    for (int i = 0; i < encodedImage.length(); i++) {
+
+        for (int j = 0; j < encodedImage[i].length(); j++) {
+            int runLength = encodedImage[i][j].second;
+            int currentPixel = encodedImage[i][j].first;
+            cout << runLength << " " << currentPixel << " ";
+        }
+        cout << endl;
+    }
+    return QVector<QVector<int>>();
+//    return RLDecode(encodedImage);
+}
+
+//QVector<QVector<int>> runLengthCodingOnBitPlanes(const QVector<QVector<int>>& image) {
+
+//}
+
+//QVector<QVector<int>> variableLengthHuffmanCoding(const QVector<QVector<int>>& image) {
+
+//}
+//QVector<QVector<int>> LZW(const QVector<QVector<int>>& image) {
+
+//}
+
+void MainWindow::on_pushButton_17_clicked()
+{
+    ui->label_error->setText("");
+
+    QRadioButton *r1 = ui->radioButton_17;
+    QRadioButton *r2 = ui->radioButton_18;
+    QRadioButton *r3 = ui->radioButton_19;
+    QRadioButton *r4 = ui->radioButton_20;
+
+    QVector<QVector<int>> newImg;
+    ui->label_error->setText("Generating...");
+
+    if(r1->isChecked()) {
+        newImg = runLengthCodingOnGrayscale(imgArray);
+    }
+//    else if(r2->isChecked()) {
+//        newImg = runLengthCodingOnBitPlanes(imgArray);
+
+//    } else if(r3->isChecked()) {
+//        newImg = variableLengthHuffmanCoding(imgArray);
+
+//    } else if(r4->isChecked()) {
+//        newImg = LZW(imgArray);
+//    }
+
+//    ui->label_error->setText("");
+
+//    QPixmap result;
+//    grayscaleToQPixmap(newImg , result);
+//    ui->label_pic_2->setPixmap(result);
+//    if(newImg.size() < 100 && newImg[0].size() < 100) {
+//        ui->label_pic_3->setPixmap(result.scaled(ui->label_pic_3->width(),ui->label_pic_3->height()));
+//    }
+
+//    ui->label_pic->adjustSize();
+
+
+//    // Showing new size
+//    ui->label_new_w->setText(QString::number(newImg.size()));
+//    ui->label_new_h->setText(QString::number(newImg[0].size()));
+
+//    // Reset stage
+//    for(int i=0 ; i< newImg.size(); i++) {
+//        for(int j=0 ; j< newImg[i].size(); j++) {
+//            newImg[i].pop_back();
+//        }
+//        newImg.pop_front();
+//    }
+}
 
