@@ -978,36 +978,23 @@
      <string>Image compression</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_18">
-    <property name="geometry">
-     <rect>
-      <x>890</x>
-      <y>520</y>
-      <width>100</width>
-      <height>32</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Decompress</string>
-    </property>
-   </widget>
    <widget class="QLabel" name="label_20">
     <property name="geometry">
      <rect>
-      <x>1100</x>
+      <x>1110</x>
       <y>600</y>
       <width>121</width>
       <height>21</height>
      </rect>
     </property>
     <property name="text">
-     <string>Comressopm ratio</string>
+     <string>Compression ratio</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_21">
     <property name="geometry">
      <rect>
-      <x>1180</x>
+      <x>1190</x>
       <y>620</y>
       <width>31</width>
       <height>21</height>
@@ -1022,7 +1009,7 @@
      <rect>
       <x>1250</x>
       <y>600</y>
-      <width>31</width>
+      <width>101</width>
       <height>21</height>
      </rect>
     </property>
@@ -1035,7 +1022,7 @@
      <rect>
       <x>1250</x>
       <y>620</y>
-      <width>31</width>
+      <width>101</width>
       <height>21</height>
      </rect>
     </property>
@@ -1048,7 +1035,7 @@
      <rect>
       <x>1140</x>
       <y>640</y>
-      <width>71</width>
+      <width>81</width>
       <height>21</height>
      </rect>
     </property>
@@ -1056,38 +1043,12 @@
      <string>Coding time</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_23">
-    <property name="geometry">
-     <rect>
-      <x>1320</x>
-      <y>640</y>
-      <width>91</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Decoding time</string>
-    </property>
-   </widget>
    <widget class="QLabel" name="label_new_w_4">
     <property name="geometry">
      <rect>
       <x>1250</x>
       <y>640</y>
-      <width>31</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_new_w_5">
-    <property name="geometry">
-     <rect>
-      <x>1420</x>
-      <y>640</y>
-      <width>31</width>
+      <width>101</width>
       <height>21</height>
      </rect>
     </property>

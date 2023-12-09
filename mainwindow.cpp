@@ -8,7 +8,8 @@
 #include <QQueue>
 #include <iostream>
 #include <utility>
-
+#include <ctime>
+#include <queue>
 using namespace std;
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -420,7 +421,7 @@ int part(const QVector<QVector<int>>& local) {
         }
     }
     for (int o = 0; o < 256; o++) {
-        possibility[o] = static_cast<int>(std::round(static_cast<float>(possibility[o]) / 9 * 255));
+        possibility[o] = static_cast<int>(round(static_cast<float>(possibility[o]) / 9 * 255));
     }
     int S = local[1][1];
     return possibility[S];
@@ -488,8 +489,8 @@ void MainWindow::on_pushButton_9_clicked()
     // Get the new image size
     int height_new = imgPad.length();
     int width_new = imgPad[0].length();
-    std::cout << height_new << std::endl;
-    std::cout << width_new << std::endl;
+    cout << height_new << endl;
+    cout << width_new << endl;
 
     for (int x = 0; x < 256; x++) {
         store[x] = 0;
@@ -1151,95 +1152,257 @@ void MainWindow::on_lineEdit_7_textChanged(const QString &arg1)
 
 // -------------------------------------------------------------------- Assignment 4 ---------------------------------------------------------
 
-QVector<QVector<QPair<int, int>>> RLEncode(const QVector<QVector<int>>& image) {
-    int height = image.length();
-    int width = image[0].length();
-
-    // Create a vector to store the encoded image
-    QVector<QVector<QPair<int, int>>> encodedImage;
-
-    // Iterate over the image
-    for (int i = 0; i < height; i++) {
-        // Get the current pixel value
-        int currentPixel = image[i][0];
-
-        // Initialize the run length
-        int runLength = 1;
-
-        // Iterate over the remaining pixels in the row
-        for (int j = 1; j < width; j++) {
-            // If the current pixel value is the same as the previous pixel value, increment the run length
-            if (currentPixel == image[i][j]) {
-                runLength++;
+// Main functions assignment 4
+tuple<string, float, float> runLengthCodingOnGrayscale(const QVector<QVector<int>>& image) {
+    clock_t t0 = clock();
+    int rows = image.length();
+    int cols = image[0].length();
+    int current_val = image[0][0];
+    int count = 1;
+    string encoded_str = "";
+    for (int w = 0; w < cols; w++) {
+        for (int h = 0; h < rows; h++) {
+            if (w == 0 && h == 0) {
+                continue;
+            }
+            int pixel_val = image[h][w];
+            if (pixel_val == current_val) {
+                count++;
             } else {
-                // Otherwise, encode the run length and reset it
-                encodedImage[i].push_back(qMakePair(currentPixel, runLength));
-                currentPixel = image[i][j];
-                runLength = 1;
+                encoded_str += "v" + to_string(current_val) + "!"+ to_string(count);
+                current_val = pixel_val;
+                count = 1;
             }
         }
-        // Encode the last run length
-        encodedImage[i].push_back(qMakePair(currentPixel, runLength));
     }
-
-    return encodedImage;
+    encoded_str += "v" + to_string(current_val) + "!"+ to_string(count);
+    clock_t t1 = clock();
+    float total_time = (t1 - t0) / (float)CLOCKS_PER_SEC;
+    int image_size_bits = rows * cols;
+    int compressed_bits = encoded_str.length();
+    float ratio = (float)image_size_bits / (float)compressed_bits;
+    return make_tuple(encoded_str, ratio, total_time);
 }
 
-QVector<QVector<int>> RLDecode(const QVector<QVector<QPair<int, int>>> encodedImage) {
-    // Get the dimensions of the encoded image
-    int height = encodedImage.length();
-
-    // Create a vector to store the decoded image
-    QVector<QVector<int>> decodedImage;
-
-    // Iterate over the encoded image
-    for (int i = 0; i < height; i++) {
-        decodedImage.push_back(QVector<int>());
-
-        for (int j = 0; j < encodedImage[i].length(); j++) {
-            int runLength = encodedImage[i][j].second;
-
-            // Initialize the current pixel value
-            int currentPixel = encodedImage[i][j].first;
-
-            // Iterate over the remaining pixels in the row
-            for (int j = 0; j < runLength; j++) {
-                // Decode the run length and reset it
-                decodedImage[i].push_back(currentPixel);
-                runLength--;
+tuple<string, float, float> runLengthCodingOnBitPlanes(QVector<QVector<int>> &orgImg) {
+    clock_t t0 = clock();
+    string encoded_str = "";
+    vector<string> bit_plane_str;
+    QVector<QVector<int>> image(orgImg);
+    for (int i = 0; i < 8; i++) {
+        string bit_str = "";
+        for (int h = 0; h < image.size(); h++) {
+            for (int w = 0; w < image[0].size(); w++) {
+                int pixel_val = image[h][w];
+                if (pixel_val > pow(2, 7 - i)) {
+                    image[h][w] = image[h][w] - pow(2, i);
+                    bit_str += "1";
+                } else {
+                    bit_str += "0";
+                }
             }
+        }
+        bit_plane_str.push_back(bit_str);
+    }
+    for (int i = 0; i < bit_plane_str.size(); i++) {
+        string bit_plane = bit_plane_str[i];
+        char current_val = bit_plane[0];
+        int count = 1;
+        for (int j = 0; j < bit_plane.size(); j++) {
+            encoded_str += "v" + to_string(j);
+            if (j == 0) {
+                continue;
+            }
+            if (current_val == bit_plane[j]) {
+                count += 1;
+            } else {
+                encoded_str += "v" + to_string(current_val) + "l" + to_string(count);
+                current_val = bit_plane[j];
+                count = 1;
+            }
+        }
+    }
+    int image_size_bits = image[0].length() * image.length();
+    int compressed_bits = encoded_str.length();
+    float ratio = static_cast<float>(image_size_bits) / static_cast<float>(compressed_bits);
+    clock_t t1 = clock();
+    float total_time = static_cast<float>(t1 - t0) / CLOCKS_PER_SEC;
+    return make_tuple(encoded_str, ratio, total_time);
+}
+struct Node
+{
+    int ch;
+    int freq;
+    Node *left, *right;
+};
 
+// Function to allocate a new tree node
+Node* getNode(int ch, int freq, Node* left, Node* right)
+{
+    Node* node = new Node();
+
+    node->ch = ch;
+    node->freq = freq;
+    node->left = left;
+    node->right = right;
+
+    return node;
+}
+
+// Comparison object to be used to order the heap
+struct comp
+{
+    bool operator()(Node* l, Node* r)
+    {
+        // highest priority item has lowest frequency
+        return l->freq > r->freq;
+    }
+};
+
+// traverse the Huffman Tree and store Huffman Codes
+// in a map.
+void encode(Node* root, string str,
+            unordered_map<int, string> &huffmanCode)
+{
+    if (root == nullptr)
+        return;
+
+    // found a leaf node
+    if (!root->left && !root->right) {
+        huffmanCode[root->ch] = str;
+    }
+
+    encode(root->left, str + "0", huffmanCode);
+    encode(root->right, str + "1", huffmanCode);
+}
+
+// traverse the Huffman Tree and decode the encoded string
+void decode(Node* root, int &index, string str)
+{
+    if (root == nullptr) {
+        return;
+    }
+
+    // found a leaf node
+    if (!root->left && !root->right)
+    {
+        cout << root->ch;
+        return;
+    }
+
+    index++;
+
+    if (str[index] =='0')
+        decode(root->left, index, str);
+    else
+        decode(root->right, index, str);
+}
+
+// Builds Huffman Tree and decode given input text
+tuple<string, float, float> variableLengthHuffmanCoding(QVector<QVector<int>> image)
+{
+    clock_t t0 = clock();
+    // count frequency of appearance of each character
+    // and store it in a map
+    unordered_map<int, int> freq;
+    for (int w = 0; w < image[0].length(); w++) {
+        for (int h = 0; h < image.length(); h++) {
+            freq[image[h][w]] += 1;
         }
     }
 
-    return decodedImage;
-}
-
-QVector<QVector<int>> runLengthCodingOnGrayscale(const QVector<QVector<int>>& image) {
-    QVector<QVector<QPair<int, int>>> encodedImage = RLEncode(image);
-    for (int i = 0; i < encodedImage.length(); i++) {
-
-        for (int j = 0; j < encodedImage[i].length(); j++) {
-            int runLength = encodedImage[i][j].second;
-            int currentPixel = encodedImage[i][j].first;
-            cout << runLength << " " << currentPixel << " ";
-        }
-        cout << endl;
+    // Create a priority queue to store live nodes of
+    // Huffman tree;
+    priority_queue<Node*, vector<Node*>, comp> pq;
+    for (auto pair: freq) {
+        pq.push(getNode(pair.first, pair.second, nullptr, nullptr));
     }
-    return QVector<QVector<int>>();
-//    return RLDecode(encodedImage);
+
+    // do till there is more than one node in the queue
+    while (pq.size() != 1) {
+        Node *left = pq.top(); pq.pop();
+        Node *right = pq.top();	pq.pop();
+        int sum = left->freq + right->freq;
+
+        pq.push(getNode(-1, sum, left, right));
+    }
+
+    Node* root = pq.top();
+    unordered_map<int, string> huffmanCode;
+    encode(root, "", huffmanCode);
+
+    // print encoded string
+    string str = "";
+    for (int h = 0; h < image.length(); h++) {
+        for (int w = 0; w < image[0].length(); w++) {
+            str += huffmanCode[image[h][w]];
+        }
+    }
+    clock_t t1 = clock();
+    float total_time = (t1 - t0) / (float)CLOCKS_PER_SEC;
+
+    float image_size_bits = image[0].length() * image.length()*8;
+    float compressed_bits = str.length();
+    cout << image_size_bits << endl;
+    cout << compressed_bits << endl;
+
+    float ratio = image_size_bits / compressed_bits;
+
+    return make_tuple(str, ratio, total_time);
 }
 
-//QVector<QVector<int>> runLengthCodingOnBitPlanes(const QVector<QVector<int>>& image) {
 
-//}
+tuple<float, float> LZW(QVector<QVector<int>> img)
+{
+    clock_t t0 = clock();
 
-//QVector<QVector<int>> variableLengthHuffmanCoding(const QVector<QVector<int>>& image) {
+    string s1 = "";
+    for (int h = 0; h < img.size(); h++) {
+        for (int w = 0; w < img[0].size(); w++) {
+            s1 += char(img[h][w]);
+        }
+    }
 
-//}
-//QVector<QVector<int>> LZW(const QVector<QVector<int>>& image) {
+    unordered_map<string, int> table;
+    for (int i = 0; i <= 255; i++) {
+        string ch = "";
+        ch += char(i);
+        table[ch] = i;
+    }
 
-//}
+    string p = "", c = "";
+    p += s1[0];
+    int code = 256;
+    vector<int> output_code;
+    for (int i = 0; i < s1.length(); i++) {
+        if (i != s1.length() - 1)
+            c += s1[i + 1];
+        if (table.find(p + c) != table.end()) {
+            p = p + c;
+        }
+        else {
+            output_code.push_back(table[p]);
+            table[p + c] = code;
+            code++;
+            p = c;
+        }
+        c = "";
+    }
+
+    output_code.push_back(table[p]);
+
+    clock_t t1 = clock();
+    float total_time = (t1 - t0) / (float)CLOCKS_PER_SEC;
+
+    float image_size_bits = img[0].length() * img.length();
+    float compressed_bits = output_code.size();
+    cout << image_size_bits << endl;
+    cout << compressed_bits << endl;
+
+    float ratio = image_size_bits / compressed_bits;
+
+    return make_tuple(ratio, total_time);
+}
 
 void MainWindow::on_pushButton_17_clicked()
 {
@@ -1250,44 +1413,58 @@ void MainWindow::on_pushButton_17_clicked()
     QRadioButton *r3 = ui->radioButton_19;
     QRadioButton *r4 = ui->radioButton_20;
 
-    QVector<QVector<int>> newImg;
     ui->label_error->setText("Generating...");
 
+    tuple<string, float, float>  t;
+    float C;
+    float time;
+    QVector<QVector<int>> newImg(imgArray);
     if(r1->isChecked()) {
-        newImg = runLengthCodingOnGrayscale(imgArray);
+        t = runLengthCodingOnGrayscale(imgArray);
+        string stringEncoded = get<0>(t);
+        C = get<1>(t);
+        time = get<2>(t);
+    } else if(r2->isChecked()) {
+        t = runLengthCodingOnBitPlanes(imgArray);
+        string stringEncoded = get<0>(t);
+        C = get<1>(t);
+        time = get<2>(t);
+    } else if(r3->isChecked()) {
+        t = variableLengthHuffmanCoding(imgArray);
+        string stringEncoded = get<0>(t);
+        C = get<1>(t);
+        time = get<2>(t);
+    } else if(r4->isChecked()) {
+        tuple<float, float> tmp = LZW(imgArray);
+        C = get<0>(tmp);
+        time = get<1>(tmp);
     }
-//    else if(r2->isChecked()) {
-//        newImg = runLengthCodingOnBitPlanes(imgArray);
 
-//    } else if(r3->isChecked()) {
-//        newImg = variableLengthHuffmanCoding(imgArray);
+    // Setting compression ratio and error
+    ui->label_new_w_2->setText(QString::number(C)+":1");
+    ui->label_new_w_4->setText(QString::number(time) + " (s)");
+    ui->label_new_w_3->setText("0.0");
+    ui->label_error->setText("");
+    QPixmap result;
+    grayscaleToQPixmap(newImg , result);
+    ui->label_pic_2->setPixmap(result);
+    if(newImg.size() < 100 && newImg[0].size() < 100) {
+        ui->label_pic_3->setPixmap(result.scaled(ui->label_pic_3->width(),ui->label_pic_3->height()));
+    }
 
-//    } else if(r4->isChecked()) {
-//        newImg = LZW(imgArray);
-//    }
-
-//    ui->label_error->setText("");
-
-//    QPixmap result;
-//    grayscaleToQPixmap(newImg , result);
-//    ui->label_pic_2->setPixmap(result);
-//    if(newImg.size() < 100 && newImg[0].size() < 100) {
-//        ui->label_pic_3->setPixmap(result.scaled(ui->label_pic_3->width(),ui->label_pic_3->height()));
-//    }
-
-//    ui->label_pic->adjustSize();
+    ui->label_pic->adjustSize();
 
 
-//    // Showing new size
-//    ui->label_new_w->setText(QString::number(newImg.size()));
-//    ui->label_new_h->setText(QString::number(newImg[0].size()));
+    // Showing new size
+    ui->label_new_w->setText(QString::number(newImg.size()));
+    ui->label_new_h->setText(QString::number(newImg[0].size()));
 
-//    // Reset stage
-//    for(int i=0 ; i< newImg.size(); i++) {
-//        for(int j=0 ; j< newImg[i].size(); j++) {
-//            newImg[i].pop_back();
-//        }
-//        newImg.pop_front();
-//    }
+    // Reset stage
+    for(int i=0 ; i< newImg.size(); i++) {
+        for(int j=0 ; j< newImg[i].size(); j++) {
+            newImg[i].pop_back();
+        }
+        newImg.pop_front();
+    }
 }
 
